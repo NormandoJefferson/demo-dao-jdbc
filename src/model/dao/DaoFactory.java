@@ -1,5 +1,6 @@
 package model.dao;
 
+import db.DB;
 import model.dao.impl.SellerDaoJDBC;
 
 // Classe auxiliar responsável por instanciar os 'Daos'.
@@ -10,6 +11,9 @@ public class DaoFactory {
     // internamente vai instanciar uma implementação. Esta é uma forma
     // de não precisar expor a implementação.
     public static SellerDao createSellerDao() {
-        return new SellerDaoJDBC();
+        // É obrigado passarmos uma conexão como argumento, pois
+        // forçamos isso no construtor que criamos na classe SellerDaoJDBC.
+        // A conexão será feita com o método estático DB.getConnection.
+        return new SellerDaoJDBC(DB.getConnection());
     }
 }
