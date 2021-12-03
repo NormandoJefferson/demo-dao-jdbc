@@ -4,7 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import db.DB;
 import db.DbException;
@@ -67,8 +70,6 @@ public class SellerDaoJDBC implements SellerDao {
         }
     }
 
-    // Método para instanciar um vendedor através dos dados da tabela.
-    // Vamos propagar a exceção, pois ela já é tratada no método findById.
     private Seller instantiateSeller(ResultSet rs, Department dep) throws SQLException {
         Seller obj = new Seller();
         obj.setId(rs.getInt("Id"));
@@ -80,7 +81,6 @@ public class SellerDaoJDBC implements SellerDao {
         return obj;
     }
 
-    // Método para instanciar um departamento através dos dados da tabela.
     private Department instantiateDepartment(ResultSet rs) throws SQLException {
         Department dep = new Department();
         dep.setId(rs.getInt("DepartmentId"));
@@ -92,5 +92,54 @@ public class SellerDaoJDBC implements SellerDao {
     public List<Seller> findAll() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public List<Seller> findByDepartment(Department department) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        try {
+            st = conn.prepareStatement(
+                    "SELECT seller.*,department.Name as DepName "
+                            + "FROM seller INNER JOIN department "
+                            + "ON seller.DepartmentId = department.Id "
+                            + "WHERE DepartmentId = ? "
+                            + "ORDER BY Name");
+
+            st.setInt(1, department.getId());
+
+            rs = st.executeQuery();
+
+            // Pode retornar vários valores por isso usamos uma lista.
+            List<Seller> list = new ArrayList<>();
+            // Usamos o map para controlar a não repetição de departamentos.
+            Map<Integer, Department> map = new HashMap<>();
+
+            // Pode retornar 0 ou mais valores por isso vamos usar o while.
+            while (rs.next()) {
+
+                //Testa se o departamento ja existe (vai no map e tenta buscar
+                // um departamento com o id, se não existir retorna nulo)
+                Department dep = map.get(rs.getInt("DepartmentId"));
+
+                // Se for nulo (não existir) vamos instanciar um departamento.
+                if (dep == null) {
+                    dep = instantiateDepartment(rs);
+                    // Salva no map.
+                    map.put(rs.getInt("DepartmentId"), dep);
+                }
+
+                Seller obj = instantiateSeller(rs, dep);
+                list.add(obj);
+            }
+            return list;
+        }
+        catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
+        finally {
+            DB.closeStatement(st);
+            DB.closeResultSet(rs);
+        }
     }
 }
