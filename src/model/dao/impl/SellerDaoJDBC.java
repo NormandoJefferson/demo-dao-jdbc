@@ -90,8 +90,42 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public List<Seller> findAll() {
-        // TODO Auto-generated method stub
-        return null;
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        try {
+            // Não tem restrição de WHERE.
+            st = conn.prepareStatement(
+                    "SELECT seller.*,department.Name as DepName "
+                            + "FROM seller INNER JOIN department "
+                            + "ON seller.DepartmentId = department.Id "
+                            + "ORDER BY Name");
+
+            rs = st.executeQuery();
+
+            List<Seller> list = new ArrayList<>();
+            Map<Integer, Department> map = new HashMap<>();
+
+            while (rs.next()) {
+
+                Department dep = map.get(rs.getInt("DepartmentId"));
+
+                if (dep == null) {
+                    dep = instantiateDepartment(rs);
+                    map.put(rs.getInt("DepartmentId"), dep);
+                }
+
+                Seller obj = instantiateSeller(rs, dep);
+                list.add(obj);
+            }
+            return list;
+        }
+        catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
+        finally {
+            DB.closeStatement(st);
+            DB.closeResultSet(rs);
+        }
     }
 
     @Override
@@ -110,22 +144,15 @@ public class SellerDaoJDBC implements SellerDao {
 
             rs = st.executeQuery();
 
-            // Pode retornar vários valores por isso usamos uma lista.
             List<Seller> list = new ArrayList<>();
-            // Usamos o map para controlar a não repetição de departamentos.
             Map<Integer, Department> map = new HashMap<>();
 
-            // Pode retornar 0 ou mais valores por isso vamos usar o while.
             while (rs.next()) {
 
-                //Testa se o departamento ja existe (vai no map e tenta buscar
-                // um departamento com o id, se não existir retorna nulo)
                 Department dep = map.get(rs.getInt("DepartmentId"));
 
-                // Se for nulo (não existir) vamos instanciar um departamento.
                 if (dep == null) {
                     dep = instantiateDepartment(rs);
-                    // Salva no map.
                     map.put(rs.getInt("DepartmentId"), dep);
                 }
 
