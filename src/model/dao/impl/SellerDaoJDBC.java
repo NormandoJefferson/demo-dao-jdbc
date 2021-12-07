@@ -29,13 +29,12 @@ public class SellerDaoJDBC implements SellerDao {
                             + "(Name, Email, BirthDate, BaseSalary, DepartmentId) "
                             + "VALUES "
                             + "(?, ?, ?, ?, ?)",
-                            Statement.RETURN_GENERATED_KEYS); // Retorna o 'id' gerado.
+                    Statement.RETURN_GENERATED_KEYS);
 
             st.setString(1, obj.getName());
             st.setString(2, obj.getEmail());
             st.setDate(3, new java.sql.Date(obj.getBirthDate().getTime()));
             st.setDouble(4, obj.getBaseSalary());
-            // getDepartment para acessar o departamento e getId para acessar o 'id' do departamento.
             st.setInt(5, obj.getDepartment().getId());
 
             int rowsAffected = st.executeUpdate();
@@ -43,10 +42,9 @@ public class SellerDaoJDBC implements SellerDao {
             if (rowsAffected > 0) {
                 ResultSet rs = st.getGeneratedKeys();
                 if (rs.next()) {
-                    int id = rs.getInt(1); // Posição 1, pois vai ser a primeira coluna das chaves geradas.
-                    obj.setId(id); // Vai atribuir o id ao objeto obj.
+                    int id = rs.getInt(1);
+                    obj.setId(id);
                 }
-                // Fechamos o 'rs' aqui pois ele não vai existir no escopo do finally.
                 DB.closeResultSet(rs);
             }
             else {
@@ -63,8 +61,30 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public void update(Seller obj) {
-        // TODO Auto-generated method stub
+        PreparedStatement st = null;
+        try {
+            st = conn.prepareStatement(
+                    "UPDATE seller "
+                            + "SET Name = ?, Email = ?, BirthDate = ?, BaseSalary = ?, DepartmentId = ? "
+                            + "WHERE Id = ?");
 
+            st.setString(1, obj.getName());
+            st.setString(2, obj.getEmail());
+            st.setDate(3, new java.sql.Date(obj.getBirthDate().getTime()));
+            st.setDouble(4, obj.getBaseSalary());
+            st.setInt(5, obj.getDepartment().getId());
+            // 'id' do vendedor.
+            st.setInt(6, obj.getId());
+
+            // Não precisa verificar as linhas afetadas.
+            st.executeUpdate();
+        }
+        catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
+        finally {
+            DB.closeStatement(st);
+        }
     }
 
     @Override
