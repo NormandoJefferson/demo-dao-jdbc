@@ -4,3 +4,5 @@ Neste projeto vamos acessar um banco de dados MySQL utilizando a API JDBC com o 
 que abstrai e encapsula os mecanismos de acesso a dados escondendo os detalhes da execução da 
 origem dos dados.
 
+## Autor
+Normando Jefferson Tigre da Silva
